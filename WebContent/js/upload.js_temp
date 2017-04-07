@@ -1,0 +1,122 @@
+/**
+ * http://usejsdoc.org/
+ */
+
+var totalFileLength, totalUploaded, fileCount, filesUploaded;
+
+$(function(){
+	console.log("updown.js");
+	
+//	$('#files').addEventListener('change', onFileSelect, false);
+	$(document).ready(function(){
+		$('#files').bind('change', function(e){
+			onFileSelect(e);
+		});
+		$('#uploadButton').bind('click', function(){
+			startUpload();
+		});
+	});
+	
+	document.getElementById('uploadButton');
+	document.getElementById('startUpload');
+	
+	function debug(s){
+		var debug = document.getElementById('debug');
+		if(debug){
+			debug.innerHTML = debug.innerHTML + '<br/>' + s;
+		}
+	}
+	
+	function onUploadComplete(e) {
+        totalUploaded += document.getElementById('files').files[filesUploaded].size;
+        filesUploaded++;
+        debug('complete ' + filesUploaded + " of " + fileCount);
+        debug('totalUploaded: ' + totalUploaded);
+        if (filesUploaded < fileCount) {
+            uploadNext();
+        } else {
+            var bar = document.getElementById('bar');
+            bar.style.width = '100%';
+            bar.innerHTML = '100% complete';
+            alert('Finished uploading file(s)');
+        }
+    }
+	
+	function onFileSelect(e){
+		var files = e.target.files;
+		var output = [];
+		fileCount = files.length;
+		totalFileLength = 0;
+		
+		for(var i=0; i < fileCount; i++){
+			var file = files[i];
+			
+			console.log(file);
+			
+			output.push(file.name, ' (', file.size, ' bytes, ', file.lastModifiedDate.toLocaleDateString(), ')');
+			output.push('<br/>');
+			totalFileLength += file.size;
+		}
+		$('#selectedFiles')[0].innerHTML = output.join('');
+		debug('totalFileLength:' + totalFileLength);
+	}
+	
+	function onUploadProgress(e) {
+        if (e.lengthComputable) {
+            var percentComplete = parseInt((e.loaded + totalUploaded) * 100 / totalFileLength);
+            var bar = document.getElementById('bar');
+            bar.style.width = percentComplete + '%';
+            bar.innerHTML = percentComplete + ' % complete';
+        } else {
+            debug('unable to compute');
+        }
+    }
+	
+	function uploadNext() {
+        var xhr = new XMLHttpRequest();
+        var fd = new FormData();
+        var file = document.getElementById('files').files[filesUploaded];
+        fd.append("multipartFile", file);
+        console.log(xhr);
+        xhr.upload.addEventListener("progress", onUploadProgress, false);
+        xhr.addEventListener("load", onUploadComplete, false);
+        xhr.addEventListener("error", onUploadFailed, false);
+        xhr.open("POST", "upFile");
+        xhr.send(fd);
+    }
+	
+	function startUpload(){
+		var xhr = new XMLHttpRequest();
+		var form = $('form')[0];
+		var formData = new FormData(form);
+		
+		var fileList = $('#files')[0].files;
+		for(var i=0; i< fileList.length; i++){
+			var file = fileList[i];
+			formData.append("uploadfile", file);
+			debug('uploading ' + file.name);
+		}
+		
+		console.log(xhr);
+		xhr.upload.addEventListener("progress", onUploadProgress, false);
+		xhr.addEventListener("load", onUploadComplete, false);
+		xhr.addEventListener("error", onUploadFailed, false);
+		
+//		$.ajax({
+//			url: '/upFile',
+//			processData: false,
+//			contentType: false,
+//			data: formData,
+//			type: 'POST',
+//			success: function(res){
+//				alert(res);
+//			}
+//		});
+		totalUploaded = filesUploaded = 0;
+        uploadNext();
+	}
+	
+	function onUploadFailed(e) {
+        alert("Error uploading file");
+    }
+});

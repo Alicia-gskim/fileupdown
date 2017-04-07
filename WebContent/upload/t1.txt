@@ -1,0 +1,7 @@
+Java create hdfs file
+
+---
+hdfsPutFiles method run!
+---
+
+Done~
